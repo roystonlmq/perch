@@ -1,3 +1,4 @@
+import elevenlabs from '../agent_configs/elevenlabs.json' with { type: 'json' };
 import { createServer } from 'node:http';
 import { readFile, mkdtemp, writeFile, rm } from 'node:fs/promises';
 import { execFile } from 'node:child_process';
@@ -55,8 +56,8 @@ createServer(async (request, response) => {
         const file = join(folder, 'recording.' + format);
         await writeFile(file, Buffer.concat(chunks), { mode: 0o600 });
         const { stdout } = await run(process.env.ELEVENLABS_BIN || 'elevenlabs', [
-          'speech-to-text', 'convert', '--model-id', 'scribe_v2', '--file', file,
-          '--tag-audio-events', 'false', '--format', 'json'
+          'speech-to-text', 'convert', '--model-id', elevenlabs.dictation.modelId, '--file', file,
+          '--tag-audio-events', String(elevenlabs.dictation.tagAudioEvents), '--format', 'json'
         ], { timeout: 35000 });
         return json(200, { text: JSON.parse(stdout).text?.trim() || '' });
       } catch {

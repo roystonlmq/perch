@@ -1,3 +1,4 @@
+import elevenlabs from '../agent_configs/elevenlabs.json' with { type: 'json' };
 import { execFile } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
@@ -83,14 +84,14 @@ createServer(async (request, response) => {
       const audio = await new Promise((resolve, reject) => {
         const child = execFile(process.env.ELEVENLABS_BIN || 'elevenlabs', [
           'text-to-speech', 'convert', '--voice-id', briefingVoice,
-          '--output-format', 'mp3_44100_64',
+          '--output-format', elevenlabs.briefing.outputFormat,
           '--output', '-', '--json', '-'
         ], { encoding: 'buffer', timeout: 25000, maxBuffer: 4_000_000 }, (error, stdout) => {
           if (error || !stdout.length) reject(new Error('ElevenLabs could not generate the briefing.'));
           else resolve(stdout);
         });
         child.stdin.on('error', () => {});
-        child.stdin.end(JSON.stringify({ text, model_id: 'eleven_flash_v2_5' }));
+        child.stdin.end(JSON.stringify({ text, model_id: elevenlabs.briefing.modelId }));
       });
       response.writeHead(200, { 'Content-Type': 'audio/mpeg' });
       return response.end(audio);

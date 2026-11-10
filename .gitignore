@@ -7,3 +7,5 @@ mac-voice/client.bundle.js
 .voice-private/
 
 mac-voice/perch-live.bundle.js
+
+.perch.env

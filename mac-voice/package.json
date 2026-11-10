@@ -4,9 +4,10 @@
   "type": "module",
   "scripts": {
     "build": "esbuild client.mjs --bundle --platform=browser --format=esm --outfile=client.bundle.js",
-    "start": "npm run build && node server.mjs",
+    "start": "npm run build && node --env-file-if-exists=../.perch.env server.mjs",
     "test": "node --test",
-    "perch": "esbuild perch-live.mjs --bundle --platform=browser --format=esm --outfile=perch-live.bundle.js && node perch-server.mjs"
+    "perch": "esbuild perch-live.mjs --bundle --platform=browser --format=esm --outfile=perch-live.bundle.js && node --env-file-if-exists=../.perch.env perch-server.mjs",
+    "setup:elevenlabs": "node setup-elevenlabs.mjs"
   },
   "dependencies": {
     "@elevenlabs/client": "1.35.0",

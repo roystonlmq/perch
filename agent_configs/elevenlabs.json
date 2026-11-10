@@ -1,0 +1,15 @@
+{
+  "voice": {
+    "name": "Jacqueline - Casual",
+    "id": "keq9BWrGRYbiHfZFjX0i",
+    "publicOwnerId": "c8d9af7702aac5191e844267d6838a0d6071a2a8001a6378f6eaf49c76765514"
+  },
+  "dictation": {
+    "modelId": "scribe_v2",
+    "tagAudioEvents": false
+  },
+  "briefing": {
+    "modelId": "eleven_flash_v2_5",
+    "outputFormat": "mp3_44100_64"
+  }
+}
