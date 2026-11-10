@@ -4,7 +4,7 @@ Perch is a translucent voice HUD for starting and tracking Codex sessions on a M
 
 ## Rehearse offline
 
-Open [voice-hud-demo.html](voice-hud-demo.html) in a browser. The rehearsal uses fictional requests, notifications and decisions.
+Open [voice-hud-demo.html](voice-hud-demo.html) in a browser. The rehearsal uses fictional requests, notifications and decisions, with prerecorded ElevenLabs speech embedded in the HTML for offline playback.
 
 ## Run a live demo
 
