@@ -30,7 +30,7 @@ In another terminal, run:
 npm --prefix mac-voice run perch
 ```
 
-Open http://127.0.0.1:8772, choose **Go live**, and press **Option + V**. Speak, then press it again to mute. Jobs started from Perch get a real Codex session. Open a job to read its answer, play a briefing, or jump to Codex.
+Open http://127.0.0.1:8772, choose **Go live**, and press **Option + V**. Speak at your own pace, then press it again to send the complete recording for ElevenLabs transcription. The assistant gets one text turn after recording stops. Jobs started from Perch get a real Codex session. Open a job to read its answer, play a briefing, or jump to Codex.
 
 Live mode sends speech and spoken briefing text to ElevenLabs. Both local servers bind to loopback. Use fictional tasks when presenting.
 

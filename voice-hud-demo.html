@@ -205,7 +205,7 @@ $('voice-mode').onclick = async () => {
         jobs: renderLive
       });
       sessions = [];
-      setVoice(false, 'Live mode starts real Codex sessions. Press Option + V to speak.');
+      setVoice(false, 'Press Option + V to start recording. Press it again to send the full request.');
       live.refresh().catch(error => { $('voice-caption').textContent = error.message; });
     }
   } catch {

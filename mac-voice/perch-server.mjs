@@ -1,5 +1,9 @@
 import { createServer } from 'node:http';
-import { readFile } from 'node:fs/promises';
+import { readFile, mkdtemp, writeFile, rm } from 'node:fs/promises';
+import { execFile } from 'node:child_process';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { promisify } from 'node:util';
 
 const port = Number(process.env.PERCH_PORT || 8772);
 const origin = `http://127.0.0.1:${port}`;
@@ -9,7 +13,9 @@ const assets = {
   '/perch-live.js': ['./perch-live.bundle.js', 'text/javascript; charset=utf-8']
 };
 const routes = new Set(['POST /api/connect', 'POST /api/start', 'GET /api/jobs', 'POST /api/briefing-audio']);
-const perchJobs = new Set();
+const perchJobs = new Set((process.env.PERCH_RESTORE_JOB_IDS || '').split(',').filter(Boolean));
+const run = promisify(execFile);
+const recordingTypes = new Map([['audio/webm', 'webm'], ['audio/mp4', 'mp4'], ['audio/ogg', 'ogg']]);
 
 createServer(async (request, response) => {
   response.setHeader('Cache-Control', 'no-store');
@@ -30,15 +36,34 @@ createServer(async (request, response) => {
       response.writeHead(200, { 'Content-Type': asset[1] });
       return response.end(content);
     }
-    if (!routes.has(`${request.method} ${request.url}`)) return json(404, { error: 'Unavailable' });
+    const dictation = request.method === 'POST' && request.url === '/api/dictation';
+    if (!dictation && !routes.has(`${request.method} ${request.url}`)) return json(404, { error: 'Unavailable' });
     if (request.headers['x-perch'] !== '1') return json(403, { error: 'Open Perch first.' });
 
     const chunks = [];
     let size = 0;
     for await (const chunk of request) {
       size += chunk.length;
-      if (size > 20000) return json(413, { error: 'Request too long.' });
+      if (size > (dictation ? 12_000_000 : 20_000)) return json(413, { error: 'Request too long.' });
       chunks.push(chunk);
+    }
+    if (dictation) {
+      const format = recordingTypes.get(request.headers['content-type']?.split(';')[0]);
+      if (!format || !size) return json(400, { error: 'No usable recording. Try speaking again.' });
+      const folder = await mkdtemp(join(tmpdir(), 'perch-dictation-'));
+      try {
+        const file = join(folder, 'recording.' + format);
+        await writeFile(file, Buffer.concat(chunks), { mode: 0o600 });
+        const { stdout } = await run(process.env.ELEVENLABS_BIN || 'elevenlabs', [
+          'speech-to-text', 'convert', '--model-id', 'scribe_v2', '--file', file,
+          '--tag-audio-events', 'false', '--format', 'json'
+        ], { timeout: 35000 });
+        return json(200, { text: JSON.parse(stdout).text?.trim() || '' });
+      } catch {
+        return json(502, { error: 'ElevenLabs could not transcribe the recording. Try again.' });
+      } finally {
+        await rm(folder, { recursive: true, force: true });
+      }
     }
     const result = await fetch(launcher + request.url, {
       method: request.method,

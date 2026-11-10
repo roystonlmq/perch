@@ -15,15 +15,55 @@ async function api(path, data, signal) {
 
 export function createPerchLive({ mic, caption, jobs }) {
   let connection, playback, idleTimer;
-  let listening = false;
+  let recording, capture, chunks = [];
   let poll, busy = false, closed = false;
   const gate = createVoiceTurn(volume => connection?.setVolume({ volume }));
   const refresh = async () => jobs((await (await api('jobs')).json()).jobs);
+
+  function releaseMic() {
+    capture?.getTracks().forEach(track => track.stop());
+    capture = undefined;
+  }
 
   async function toggle() {
     if (busy || closed) return;
     busy = true;
     try {
+      if (!recording) {
+        playback?.abort();
+        gate.reset();
+        capture = await navigator.mediaDevices.getUserMedia({ audio: true });
+        if (closed) { releaseMic(); return; }
+        const type = ['audio/webm;codecs=opus', 'audio/mp4', 'audio/ogg;codecs=opus']
+          .find(format => MediaRecorder.isTypeSupported(format));
+        if (!type) throw Error('This browser cannot record audio for dictation.');
+        chunks = [];
+        recording = new MediaRecorder(capture, { mimeType: type });
+        recording.ondataavailable = ({ data }) => { if (data.size) chunks.push(data); };
+        recording.start();
+        mic(true, 'Recording locally. Press Option + V again to send.');
+        return;
+      }
+      const recorder = recording;
+      recording = undefined;
+      mic(false, 'Transcribing with ElevenLabs…');
+      await new Promise((resolve, reject) => {
+        recorder.onstop = resolve;
+        recorder.onerror = () => reject(Error('The recording could not be read.'));
+        recorder.stop();
+      });
+      releaseMic();
+      if (closed) return;
+      const audio = new Blob(chunks, { type: recorder.mimeType });
+      chunks = [];
+      const response = await fetch('/api/dictation', {
+        method: 'POST', headers: { 'X-Perch': '1', 'Content-Type': audio.type },
+        body: audio, signal: AbortSignal.timeout(40000)
+      });
+      const { text, error } = await response.json();
+      if (!response.ok) throw Error(error);
+      if (closed) return;
+      if (!text) { caption('No speech detected. Press Option + V to try again.'); return; }
       if (!connection) {
         caption('Connecting to ElevenLabs…');
         const { signedUrl } = await (await api('connect', {})).json();
@@ -50,6 +90,7 @@ export function createPerchLive({ mic, caption, jobs }) {
               JSON.stringify(jobUpdates((await (await api('jobs')).json()).jobs, include_details === true))
           },
           onMessage: ({ role, message }) => {
+            if (recording || closed) return;
             if (role === 'user') {
               gate.transcript(message);
               caption('Heard: ' + message);
@@ -63,25 +104,22 @@ export function createPerchLive({ mic, caption, jobs }) {
           },
           onDisconnect: ({ reason }) => {
             connection = undefined;
-            listening = false;
             clearTimeout(idleTimer);
             gate.reset();
-            if (reason !== 'user') mic(false, 'Connection ended. Press Option + V to reconnect.');
+            if (reason !== 'user' && !recording) caption('Connection ended. Your next dictation will reconnect.');
           }
         });
         if (closed) { await connection.endSession(); return; }
         poll ??= setInterval(() => refresh().catch(() => {}), 1500);
       }
-      listening = !listening;
-      if (listening) {
-        playback?.abort();
-        gate.press();
-      } else {
-        gate.release();
-      }
-      connection.setMicMuted(!listening);
-      mic(listening, listening ? 'Mic on. Press Option + V again to mute.' : 'Mic muted. Waiting for a reply.');
+      gate.press();
+      gate.transcript(text);
+      gate.release();
+      caption('Heard: ' + text);
+      connection.sendUserMessage(text);
     } catch (error) {
+      releaseMic();
+      recording = undefined;
       if (!closed) mic(false, error.message);
     } finally {
       busy = false;
@@ -89,6 +127,7 @@ export function createPerchLive({ mic, caption, jobs }) {
   }
 
   async function play(text) {
+    if (recording || busy) return;
     playback?.abort();
     const controller = new AbortController();
     playback = controller;
@@ -116,6 +155,9 @@ export function createPerchLive({ mic, caption, jobs }) {
     async close() {
       closed = true;
       clearInterval(poll);
+      if (recording?.state === 'recording') recording.stop();
+      recording = undefined;
+      releaseMic();
       playback?.abort();
       if (connection) await connection.endSession();
     }
