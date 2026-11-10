@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Perch · Voice HUD prototype</title>
+<style>
+:root{color-scheme:dark;--paper:#eef8ff;--sub:#b5c9d7;--line:#c9e8ff26;--cyan:#a3f6e1;--blue:#92b9ff;--amber:#ffd593;--glass:#102434ae;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:#101c2d;color:var(--paper)}button{font:inherit;color:inherit;cursor:pointer}button:focus-visible{outline:2px solid var(--cyan);outline-offset:4px}[hidden]{display:none!important}
+.wallpaper{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:-1;background:#10223b}
+.menu{height:38px;background:#111e2d66;backdrop-filter:blur(22px);border-bottom:1px solid #ffffff16;display:flex;align-items:center;justify-content:space-between;padding:0 26px;color:#e4edf7;font-size:12px}.menu b{font-size:13px}.menu span{color:#b8ccdc}
+.stage{position:relative;max-width:1390px;min-height:calc(100svh - 38px);margin:auto;padding:clamp(30px,6vw,88px) clamp(18px,5.3vw,76px) 85px;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(355px,.85fr);gap:clamp(22px,5vw,74px);align-content:center;align-items:start}
+.context{padding-top:18px}.tag{display:inline-flex;align-items:center;gap:7px;color:#dceeff;border:1px solid #d7edff35;background:#1021386b;border-radius:20px;padding:6px 10px;font-size:11px}.tag i,.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--cyan);box-shadow:0 0 10px #9bffe788}.context h1{font-size:clamp(48px,7.5vw,112px);letter-spacing:-.085em;line-height:.89;margin:22px 0 16px;font-weight:650}.context>p{max-width:34ch;color:#d9eafa;font-size:clamp(15px,1.6vw,20px);line-height:1.5;margin:0 0 27px}.mock{border-radius:16px;border:1px solid var(--line);background:#10203284;backdrop-filter:blur(18px);overflow:hidden;max-width:510px;box-shadow:0 20px 60px #06132350}.mock-bar{display:flex;align-items:center;gap:6px;padding:13px 15px;border-bottom:1px solid var(--line);font-size:11px;color:var(--sub)}.mock-bar i{width:7px;height:7px;border-radius:50%;background:#afc7d848}.mock-bar span{margin-left:8px}.mock-body{padding:19px 21px 21px}.mock-body b{font-size:16px}.mock-body p{color:var(--sub);font-size:13px;line-height:1.55;margin:7px 0 0}
+.glass{background:linear-gradient(150deg,#28475d9c,#0d1d2dce 55%,#182e409e);border:1px solid #d0edff42;box-shadow:inset 0 1px 0 #e1f3ff40,0 28px 95px #050e246f;backdrop-filter:blur(28px) saturate(145%)}
+.hud{border-radius:26px;overflow:hidden;min-width:0}.hud-head,.sessions-head,.row,.voice,.dock,.details-actions{display:flex;align-items:center}.hud-head{padding:17px 18px 14px;gap:11px}.orb{width:38px;height:38px;display:grid;place-items:center;border-radius:13px;color:#132d37;background:linear-gradient(145deg,#dbfffa,#8eead4 54%,#9bbcff);box-shadow:0 0 20px #8af2e84d,inset 0 1px 0 #fff}.brand{flex:1}.brand b{font-size:16px;letter-spacing:-.02em}.brand small{display:block;font-size:11px;color:var(--sub);margin-top:2px}.icon{height:30px;width:34px;border:1px solid var(--line);border-radius:9px;background:#ffffff08}.icon:hover,.secondary:hover,.row:hover{background:#cceaff16}
+.voice{position:relative;margin:0 15px 13px;padding:15px 13px;gap:12px;border:1px solid #99ead448;background:#0e263d7a;border-radius:16px}.mic{width:44px;height:44px;flex:0 0 44px;border:1px solid #c4fff6a0;border-radius:50%;background:var(--cyan);color:#112a39;display:grid;place-items:center}.mic svg,.orb svg{width:21px;height:21px}.voice-text{flex:1;min-width:0}.voice-text b{font-size:14px}.voice-text p{color:var(--sub);font-size:12px;line-height:1.4;margin:4px 0 0}.voice[data-active=true] .mic{box-shadow:0 0 0 5px #9dfbe635,0 0 22px #9dfbe65b}.wave{height:22px;display:flex;gap:3px;align-items:center;color:var(--cyan)}.wave i{width:2px;height:var(--h);border-radius:2px;background:currentColor;opacity:.65}.voice[data-active=true] .wave i{animation:wave .75s ease-in-out infinite alternate;animation-delay:var(--d)}@keyframes wave{to{transform:scaleY(.26)}}
+.toast{margin:0 15px 14px;padding:11px 12px;border:1px solid #ffcf8b50;border-radius:12px;background:#503c2e65;display:flex;align-items:center;gap:9px;color:#ffe3b8;font-size:12px}.toast div{flex:1;line-height:1.4}.toast b{display:block}.toast button{font-size:11px}
+.sessions{padding:0 15px 13px}.sessions-head{justify-content:space-between;padding:5px 2px 9px}.sessions-head h2{font-size:13px;margin:0}.sessions-head span{font-size:11px;color:var(--sub)}.row{width:100%;text-align:left;gap:10px;background:transparent;border:0;border-top:1px solid var(--line);padding:12px 3px;min-height:55px}.row-icon{font-size:13px;border:1px solid var(--line);background:#e4f2ff0c;border-radius:8px;width:30px;height:30px;display:grid;place-items:center;color:#cce0ff;flex:none}.row-label{flex:1;min-width:0}.row-label b,.row-label small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.row-label b{font-size:13px}.row-label small{font-size:11px;color:var(--sub);margin-top:4px}.state{white-space:nowrap;font-size:10px;border-radius:10px;padding:4px 6px;background:#94bdff19;color:#bed6ff}.state[data-state="Needs input"]{background:#ffd48f20;color:var(--amber)}.state[data-state=Done]{background:#a1fae017;color:var(--cyan)}.chev{color:var(--sub)}
+.foot{display:flex;align-items:center;justify-content:space-between;gap:8px;border-top:1px solid var(--line);padding:12px 15px;color:var(--sub);font-size:11px}.shortcuts{display:flex;align-items:center;gap:5px;white-space:nowrap}kbd{font:inherit;font-size:11px;min-width:20px;text-align:center;border:1px solid #c6e4ff35;border-bottom-width:2px;border-radius:5px;background:#bddbff0e;padding:2px 5px;color:#e4f3ff}.secondary{font-size:12px;border:1px solid var(--line);border-radius:8px;background:#eaf5ff09;padding:6px 9px;white-space:nowrap}.primary{background:var(--cyan);color:#102831;border:0;border-radius:9px;padding:8px 11px;font-weight:650;font-size:12px}
+.dock{position:fixed;right:clamp(14px,4vw,55px);bottom:23px;gap:9px;border-radius:24px;padding:7px 11px 7px 7px;z-index:4}.dock .orb{width:30px;height:30px;border-radius:50%}.dock .orb svg{width:16px;height:16px}.dock b{font-size:12px}.dock .dot{width:6px;height:6px}.dock small{font-size:10px;color:var(--sub)}
+dialog{width:min(470px,calc(100% - 32px));border-radius:22px;color:var(--paper);padding:20px}dialog::backdrop{background:#07132272;backdrop-filter:blur(5px)}dialog h2{margin:11px 0;font-size:23px;letter-spacing:-.04em}dialog p{color:#d2e5f2;line-height:1.5;white-space:pre-wrap;max-height:55vh;overflow:auto}.details-actions a{text-decoration:none}dialog .icon{float:right}.details-actions{gap:9px;flex-wrap:wrap;margin-top:18px}
+@media(max-width:800px){.stage{grid-template-columns:1fr;gap:22px;padding-top:26px;align-content:start}.context{padding:0}.context h1{font-size:58px;margin:14px 0 10px}.context>p{margin-bottom:0}.mock{display:none}.hud{max-width:520px;width:100%}.menu{padding:0 15px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important}}
+</style>
+</head>
+<body>
+<svg class="wallpaper" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs><linearGradient id="sky" x2="0" y2="1"><stop stop-color="#101d36"/><stop offset=".65" stop-color="#386c80"/><stop offset="1" stop-color="#122939"/></linearGradient><radialGradient id="light"><stop stop-color="#a6e2cf" stop-opacity=".55"/><stop offset="1" stop-color="#5eb6cc" stop-opacity="0"/></radialGradient><linearGradient id="ridge" x2="1" y2="1"><stop stop-color="#2a536b"/><stop offset="1" stop-color="#192a49"/></linearGradient></defs><path fill="url(#sky)" d="M0 0h1440v900H0z"/><ellipse fill="url(#light)" cx="970" cy="295" rx="615" ry="350"/><path fill="url(#ridge)" d="M0 480 120 414 245 435 359 340 437 387 549 310 637 393 727 347 846 430 963 318 1040 358 1156 304 1280 372 1440 316v584H0z"/><path fill="#132f46" opacity=".72" d="M0 611 158 530 284 567 401 510 554 613 695 527 825 568 963 477 1125 544 1280 444 1440 505v395H0z"/><path fill="#112b3c" d="m0 734 143-55 113 51 130-65 150 75 185-82 124 49 161-76 147 49 143-77 144 66v231H0z"/><path fill="#102335" d="m0 825 160-22 159 32 186-27 179 17 165-31 202 32 173-42 216 20v96H0z"/></svg>
+<div class="menu"><b>◈ &nbsp; Perch</b><span>Desktop concept &nbsp; / &nbsp; Fictional demo</span></div>
+<main class="stage">
+  <section class="context"><span class="tag"><i></i> Interactive prototype</span><h1>Perch.</h1><p>A voice companion that keeps your Codex sessions one glance away.</p>
+    <div class="mock" aria-hidden="true"><div class="mock-bar"><i></i><i></i><i></i><span>Workspace · Moonbeam Observatory</span></div><div class="mock-body"><b>Observatory dashboard</b><p>Bring the night’s readings into one view. The launch version tracks telescope uptime, observation counts, and weather windows.</p></div></div>
+  </section>
+  <section id="hud" class="hud glass" aria-label="Perch heads-up display">
+    <header class="hud-head"><div class="orb" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 12h3l3-6 4 12 3-8 2 2h3"/></svg></div><div class="brand"><b>Perch</b><small id="hud-status">Ready when you are</small></div><button id="hide" class="icon" aria-label="Hide widget" title="Hide widget (Option H)">−</button></header>
+    <div id="voice" class="voice" data-active="false"><button id="mic" class="mic" aria-label="Start voice" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11v1a7 7 0 0 0 14 0v-1m-7 8v3m-3 0h6"/></svg></button><div class="voice-text" aria-live="polite"><b id="voice-title">Voice ready</b><p id="voice-caption">Try a fictional request with Option + V.</p></div><div class="wave" aria-hidden="true"><i style="--h:7px;--d:0s"></i><i style="--h:14px;--d:.1s"></i><i style="--h:22px;--d:.24s"></i><i style="--h:12px;--d:.32s"></i><i style="--h:17px;--d:.13s"></i><i style="--h:6px;--d:.4s"></i></div></div>
+    <div id="toast" class="toast" role="status"><span aria-hidden="true">◇</span><div><b id="toast-title">One decision waiting</b><span id="toast-copy">Moonbeam dashboard needs a lead metric.</span></div><button id="toast-open" class="secondary">Open</button></div>
+    <div class="sessions"><div class="sessions-head"><h2>Codex sessions</h2><span id="session-count"></span></div><div id="session-list"></div></div>
+    <footer class="foot"><span class="shortcuts"><kbd>⌥</kbd><kbd>V</kbd> Voice &nbsp; <kbd>⌥</kbd><kbd>H</kbd> Hide</span><button id="voice-mode" class="secondary" aria-pressed="false">Go live</button></footer>
+  </section>
+</main>
+<button id="dock" class="dock glass" aria-label="Show Perch widget" aria-controls="hud" aria-expanded="true"><span class="orb" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12h3l3-6 4 12 3-8 2 2h3"/></svg></span><b>Perch</b><span class="dot" id="dock-dot"></span><small id="dock-label">Hide</small></button>
+<dialog id="detail" class="glass" aria-labelledby="detail-title"><button id="close-detail" class="icon" aria-label="Close session">×</button><span id="detail-status" class="state"></span><h2 id="detail-title"></h2><p id="detail-copy"></p><div id="detail-actions" class="details-actions"></div></dialog>
+<script>
+const $ = id => document.getElementById(id);
+const demoSessions = [
+  { id:'moonbeam', icon:'◇', title:'Moonbeam dashboard', caption:'Pick the first metric', status:'Needs input', detail:'The dashboard layout is ready. Should the first card show telescope uptime, which highlights reliability, or observation counts, which highlights nightly activity?' },
+  { id:'orchard', icon:'⌕', title:'Compare fictional voice tools', caption:'Three vendors shortlisted', status:'Done', detail:'Echo Orchard is the best fit for a quick demo because setup is simple. Lantern Audio offers more control over latency. Paperwave is the budget option.' }
+];
+let sessions = demoSessions;
+let active = false, live, timer, selected, notification = 'moonbeam', serial = 0;
+const sample = 'Find three easy picnic spots in fictional Meridian Bay.';
+
+function setHud(visible) {
+  $('hud').hidden = !visible;
+  $('dock').setAttribute('aria-expanded', String(visible));
+  $('dock').setAttribute('aria-label', visible ? 'Hide Perch widget' : 'Show Perch widget');
+  $('dock-label').textContent = visible ? 'Hide' : notification ? 'New update' : 'Show';
+  if (!visible) $('dock').focus();
+}
+function render() {
+  $('session-count').textContent = sessions.length + ' sessions';
+  $('session-list').replaceChildren(...sessions.map(session => {
+    const row = document.createElement('button'); row.className = 'row';
+    const icon = document.createElement('span'); icon.className = 'row-icon'; icon.textContent = session.icon;
+    const label = document.createElement('span'); label.className = 'row-label';
+    const title = document.createElement('b'); title.textContent = session.title;
+    const caption = document.createElement('small'); caption.textContent = session.caption;
+    label.append(title,caption);
+    const state = document.createElement('span'); state.className = 'state'; state.dataset.state = session.status; state.textContent = session.status;
+    const arrow = document.createElement('span'); arrow.className = 'chev'; arrow.textContent = '›';
+    row.append(icon,label,state,arrow); row.onclick = () => openSession(session); return row;
+  }));
+  const notified = sessions.find(session => session.id === notification);
+  $('toast').hidden = !notified;
+  if (notified) {
+    $('toast-title').textContent = notified.status === 'Needs input' ? 'One decision waiting' : 'Session finished';
+    $('toast-copy').textContent = notified.status === 'Needs input' ? notified.title + ' needs your input.' : notified.title;
+    if (notified.status === 'Failed') $('toast-title').textContent = 'Session stopped';
+  }
+  if ($('hud').hidden) $('dock-label').textContent = notified ? 'New update' : 'Show';
+  if (selected && $('detail').open) showSession(sessions.find(item => item.id === selected.id) ?? selected);
+}
+function announce(text) {
+  if (!window.speechSynthesis) return;
+  const voice = speechSynthesis.getVoices().find(v => v.localService && /^en[-_]SG$/i.test(v.lang))
+    || speechSynthesis.getVoices().find(v => v.localService && /^en/i.test(v.lang));
+  if (!voice) return;
+  speechSynthesis.cancel();
+  const line = new SpeechSynthesisUtterance(text); line.voice = voice; speechSynthesis.speak(line);
+}
+function showSession(session) {
+  $('detail-title').textContent = session.title;
+  $('detail-copy').textContent = session.detail;
+  $('detail-status').textContent = session.status;
+  $('detail-status').dataset.state = session.status;
+  const choices = [];
+  function action(label, click, style = 'secondary') {
+    const button = document.createElement('button'); button.className = style; button.textContent = label; button.onclick = click; choices.push(button);
+  }
+  if (!session.url && session.status === 'Needs input') {
+    for (const choice of ['Telescope uptime', 'Observation counts']) {
+      action(choice, () => {
+        session.status = 'Done'; session.caption = 'Decision recorded';
+        session.detail = choice + ' is now the lead metric in this simulated session.';
+        notification = session.id; render();
+      }, 'primary');
+    }
+  }
+  if (session.url) {
+    const link = document.createElement('a');
+    link.href = session.url;
+    link.textContent = 'Open in Codex';
+    link.className = 'primary';
+    choices.push(link);
+  }
+  if (session.spoken || !session.url) {
+    action('Hear briefing', () => live ? live.play(session.spoken) : announce(session.detail));
+  }
+  $('detail-actions').replaceChildren(...choices);
+}
+function openSession(session) {
+  selected = session; showSession(session);
+  if (!$('detail').open) $('detail').showModal();
+}
+function setVoice(value, caption) {
+  active = value;
+  $('voice').dataset.active = String(value);
+  $('mic').setAttribute('aria-pressed', String(value));
+  $('mic').setAttribute('aria-label', value ? 'Mute voice' : 'Start voice');
+  $('hud-status').textContent = value ? 'Listening' : 'Ready when you are';
+  $('voice-title').textContent = value ? 'Listening…' : 'Voice ready';
+  $('voice-caption').textContent = caption;
+}
+function launch(text, fictional) {
+  const session = {
+    id: 'voice-' + ++serial, icon:'↗', title: fictional ? 'Meridian Bay picnic shortlist' : 'New voice request',
+    caption:'Started from voice', status:'Running',
+    detail: fictional ? 'A simulated Codex session is researching picnic spots in Meridian Bay.' : 'Your words are shown in the voice strip. This prototype is running the same fictional workflow for the preview.'
+  };
+  sessions.unshift(session); render();
+  $('voice-caption').textContent = fictional ? '“' + sample + '”' : 'Heard: ' + text;
+  setTimeout(() => {
+    session.status = 'Done'; session.caption = 'Briefing ready';
+    session.detail = 'Pick Lantern Lawn for shade and accessible paths. Tern Point has the best sunset but limited seating. Cloudbank Gardens is the sheltered backup if it rains.';
+    if (live) return;
+    notification = session.id; render();
+    if (!active) announce('Picnic shortlist is ready. ' + session.detail);
+  }, 4200);
+}
+function finishSample() {
+  clearTimeout(timer);
+  setVoice(false, 'Request captured.');
+  launch(sample, true);
+}
+function toggleVoice() {
+  setHud(true);
+  if (live) return live.toggle();
+  if (active) return finishSample();
+  setVoice(true, 'Playing a sample voice interaction…');
+  timer = setTimeout(finishSample, 2100);
+}
+
+function renderLive(jobs) {
+  if (!live) return;
+  const previous = new Map(sessions.map(item => [item.id, item.status]));
+  sessions = jobs.slice().reverse().map(job => {
+    const status = ({ running:'Running', completed:'Done', 'needs input':'Needs input', failed:'Failed', interrupted:'Failed' })[job.status] || job.status;
+    const result = live.resultParts(job.reply);
+    const detail = job.attention || result.answer || job.failure || 'This session is working on your request.';
+    return {
+      id:job.id, icon:'↗', title:job.title, status, url:job.url, detail,
+      caption: job.attention || (status === 'Done' ? 'Briefing ready' : 'Started from Perch'),
+      spoken: job.attention || (status === 'Done' ? result.spoken : '')
+    };
+  });
+  const update = sessions.find(item => item.status !== 'Running' && previous.get(item.id) !== item.status);
+  if (update) notification = update.id;
+  render();
+}
+$('mic').onclick = toggleVoice;
+$('voice-mode').onclick = async () => {
+  const button = $('voice-mode');
+  button.disabled = true;
+  clearTimeout(timer);
+  if ($('detail').open) $('detail').close();
+  notification = null;
+  try {
+    if (live) {
+      await live.close();
+      live = undefined;
+      sessions = demoSessions;
+      notification = 'moonbeam';
+      setVoice(false, 'Try a fictional request with Option + V.');
+    } else {
+      const { createPerchLive } = await import('/perch-live.js');
+      live = createPerchLive({
+        mic: setVoice,
+        caption: text => { $('voice-caption').textContent = text; },
+        jobs: renderLive
+      });
+      sessions = [];
+      setVoice(false, 'Live mode starts real Codex sessions. Press Option + V to speak.');
+      live.refresh().catch(error => { $('voice-caption').textContent = error.message; });
+    }
+  } catch {
+    setVoice(false, 'Live mode is available in the local preview. The fictional rehearsal still works here.');
+  } finally {
+    button.textContent = live ? 'Back to rehearsal' : 'Go live';
+    button.setAttribute('aria-pressed', String(Boolean(live)));
+    document.querySelector('.menu span').textContent = live ? 'Live voice / Codex connected on request' : 'Desktop concept / Fictional demo';
+    button.disabled = false;
+    render();
+  }
+};
+$('hide').onclick = () => setHud(false);
+$('dock').onclick = () => setHud($('hud').hidden);
+$('close-detail').onclick = () => $('detail').close();
+$('toast-open').onclick = () => {
+  const session = sessions.find(item => item.id === notification);
+  if (session) { notification = null; render(); openSession(session); }
+};
+document.addEventListener('keydown', event => {
+  if (event.repeat || !event.altKey || event.ctrlKey || event.metaKey) return;
+  if (event.code === 'KeyV') { event.preventDefault(); toggleVoice(); }
+  if (event.code === 'KeyH') { event.preventDefault(); setHud($('hud').hidden); }
+});
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,99 @@
+{
+  "name": "Voice Dispatcher — Mac Launcher",
+  "conversation_config": {
+    "agent": {
+      "language": "en",
+      "first_message": "",
+      "prompt": {
+        "prompt": "You are a general-purpose personal assistant. The user talks to you to get work done. Accept everyday requests such as researching places for a birthday outing, comparing options, planning a trip, drafting something, organizing information, or building software. Codex is the background worker. Talk about the requested outcome in plain language and mention Codex only if the user asks about it.\n\nTreat a clear spoken request for research, planning, drafting, or other reversible work as authorization to start. Call start_codex_job immediately when you have enough information. Ask one short question only when a missing detail blocks meaningful progress. For local recommendations, if the city is unknown, ask what area to look in. If the location is known, proceed with sensible defaults for preferences and include them in the brief. For multiple distinct requests, start one job per request. For purchases, bookings, sending messages, publishing, or other consequential external actions, prepare options or a draft and leave the final action for the user to confirm.\n\nPass through the goal, relevant context, constraints and concrete deliverable. For recommendations, request a useful shortlist with reasons and sources. Call the tool before saying anything about starting the work. After it accepts the task, confirm once and briefly in everyday language, for example, “I’ll look for birthday outing ideas around Singapore and put together a shortlist.” Do not promise a later notification or say you will check back. For a request about jobs, call list_codex_jobs silently as your first action. Wait for its result before saying anything. Never preface this lookup with a line such as “I’ll pull up the details.” Set include_details to true whenever the user asks for an update, details, results, findings, recommendations, or decisions. Speak the relevant concrete findings and any decision and its options using the tool output. Do not promise to apply a decision to a running job because the lookup tool is read-only. When several jobs are relevant, briefly cover each. Set include_details to false only for a request specifically limited to titles or statuses. Never tell the caller to open a card when you have the requested information.\n\nStay silent at connection and whenever there is no new user utterance or substantive task update. Silence, inactivity, timeouts, and empty input are never prompts. On those turns call skip_turn immediately, without saying anything before or after it. Never give idle check-ins, reminders that you are listening, or filler such as “I’m still here.” After responding to a real request, wait quietly.\n\nPreserve distinctions in the spoken request. A buffet is a dining format and a birthday is an occasion. They can occur together, but never substitute one for the other. If the transcript makes the requested venue or occasion ambiguous and it materially changes the task, ask one brief clarification before dispatch.",
+        "tools": [
+          {
+            "type": "client",
+            "name": "start_codex_job",
+            "description": "Start one background job when the user asks for work and the brief has enough detail. A clear request authorizes routine research, planning, and drafting.",
+            "expects_response": true,
+            "parameters": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "description": "Short label for this chat."
+                },
+                "brief": {
+                  "type": "string",
+                  "description": "Task brief with the user’s goal, relevant context, constraints, and concrete deliverable."
+                }
+              },
+              "required": [
+                "title",
+                "brief"
+              ]
+            },
+            "pre_tool_speech": "off"
+          },
+          {
+            "type": "client",
+            "name": "list_codex_jobs",
+            "description": "Get job updates. Include findings and pending decisions when the caller asks for an update, results, details, recommendations, or decisions.",
+            "expects_response": true,
+            "pre_tool_speech": "off",
+            "parameters": {
+              "type": "object",
+              "properties": {
+                "include_details": {
+                  "type": "boolean",
+                  "description": "True for updates, results, details, recommendations or decisions. False only when asked specifically for titles or statuses."
+                }
+              },
+              "required": [
+                "include_details"
+              ]
+            }
+          }
+        ],
+        "built_in_tools": {
+          "skip_turn": {
+            "type": "system",
+            "name": "skip_turn",
+            "description": "Stay silent on idle, empty input, or timeout turns.",
+            "params": {
+              "system_tool_type": "skip_turn"
+            }
+          }
+        }
+      }
+    },
+    "conversation": {
+      "text_only": false,
+      "max_duration_seconds": 600
+    },
+    "turn": {
+      "turn_timeout": 30,
+      "initial_wait_time": 30,
+      "silence_end_call_timeout": -1,
+      "soft_timeout_config": {
+        "timeout_seconds": -1
+      }
+    },
+    "asr": {
+      "provider": "scribe_realtime",
+      "quality": "high",
+      "user_input_audio_format": "pcm_16000",
+      "keywords": [
+        "buffet",
+        "lunch buffet",
+        "dinner buffet",
+        "buffet restaurant",
+        "all-you-can-eat"
+      ]
+    }
+  },
+  "platform_settings": {
+    "auth": {
+      "enable_auth": true
+    },
+    "widget": {
+      "mic_muting_enabled": true
+    }
+  }
+}

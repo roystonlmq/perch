@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Voice Dispatcher</title>
+<style>
+  :root { color-scheme: dark; font: 16px/1.55 system-ui; background: #11171a; color: #e5edec; }
+  body { max-width: 44rem; margin: 7vh auto; padding: 0 1.25rem; }
+  h1 { font-size: clamp(2rem, 7vw, 3.25rem); line-height: 1.15; margin: .3em 0; }
+  button, a { color: inherit; }
+  button { cursor: pointer; border-radius: .5rem; border: 1px solid #728681; background: #263834; padding: .7rem .9rem; font: inherit; margin: .25rem .25rem .25rem 0; }
+  button:disabled { cursor: default; opacity: .5; }
+  #talk { background: #abe6cf; color: #122620; touch-action: none; user-select: none; }
+  #talk[aria-pressed=true] { background: #f6c588; }
+  #mode { color: #abe6cf; font-size: .85rem; letter-spacing: .12em; text-transform: uppercase; }
+  article { padding: .85rem 1rem; border: 1px solid #3d514e; border-radius: .6rem; margin: .7rem 0; }
+  article h3, article p { margin: .2em 0; }
+  #notice { color: #f6c588; min-height: 1.6em; }
+</style>
+<main>
+  <span id="mode"></span>
+  <h1>Voice Dispatcher</h1>
+  <p id="description"></p>
+  <section id="live" hidden>
+    <button id="connect">Connect voice</button>
+    <button id="talk" disabled aria-pressed="false">Unmute mic</button>
+    <button id="notifications">Enable pings</button>
+    <p id="voice-status" role="status"></p>
+    <p id="heard"></p>
+    <p id="response" aria-live="polite"></p>
+  </section>
+  <section id="demo" hidden>
+    <button data-fixture="jobs">Try a job search</button>
+    <button data-fixture="research">Try vendor research</button>
+    <button data-fixture="build">Try a build and alert</button>
+  </section>
+  <p id="notice" role="status"></p>
+  <h2>Jobs</h2>
+  <div id="jobs">No jobs yet.</div>
+</main>
+<script type="module" src="/client.bundle.js"></script>
+</html>

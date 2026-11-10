@@ -1,0 +1,9 @@
+# Credentials — never commit these. Use .env.example as the tracked template.
+.env
+
+mac-voice/node_modules/
+mac-voice/client.bundle.js
+
+.voice-private/
+
+mac-voice/perch-live.bundle.js

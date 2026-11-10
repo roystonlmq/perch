@@ -1,0 +1,15 @@
+{
+  "name": "mac-voice-dispatcher",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "esbuild client.mjs --bundle --platform=browser --format=esm --outfile=client.bundle.js",
+    "start": "npm run build && node server.mjs",
+    "test": "node --test",
+    "perch": "esbuild perch-live.mjs --bundle --platform=browser --format=esm --outfile=perch-live.bundle.js && node perch-server.mjs"
+  },
+  "dependencies": {
+    "@elevenlabs/client": "1.35.0",
+    "esbuild": "0.25.12"
+  }
+}
